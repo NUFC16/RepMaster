@@ -11,18 +11,17 @@ import java.util.ArrayList;
 public class RepManager implements SensorEventListener {
     private static final String TAG = "RepManager";
     private static final float ALPHA = 0.25f;
-    private static final float IGNORERANGE = 0.15f;
+    private static final float IGNORE_RANGE = 0.15f;
 
     private int numberOfReps = 0;
     private ArrayList<Float> thresholdValues = new ArrayList<Float>();
-    private ArrayList<Float> sampleValues = new ArrayList<Float>();
 
     private SensorManager senSensorManager;
     private Sensor senAccelerometer;
 
     public RepManager(Context context){
         senSensorManager = (SensorManager) context.getSystemService(context.SENSOR_SERVICE);
-        senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     }
 
     public void register(){
@@ -48,7 +47,7 @@ public class RepManager implements SensorEventListener {
         for(int i=1; i<thresholdValues.size(); i++) {
             currVal = thresholdValues.get(i);
 
-            if (Math.abs(currVal - prevVal) > IGNORERANGE) {
+            if (Math.abs(currVal - prevVal) > IGNORE_RANGE) {
                 if (isRising == true && (currVal < prevVal)) {
                     // inc counter only on value raise
                     numberOfReps++;
@@ -59,7 +58,7 @@ public class RepManager implements SensorEventListener {
                 prevVal = thresholdValues.get(i);
             }
         }
-        // here we have all the values
+        // reset values
         thresholdValues.clear();
     }
 
@@ -76,23 +75,14 @@ public class RepManager implements SensorEventListener {
     public void onSensorChanged(SensorEvent sensorEvent) {
         Sensor mySensor = sensorEvent.sensor;
 
-        if (mySensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-            float x = sensorEvent.values[0];
-            float y = sensorEvent.values[1];
-            float z = sensorEvent.values[2];
+        if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            float x = (Math.abs(sensorEvent.values[0]) < 1) ? 0 : sensorEvent.values[0];
+            float y = (Math.abs(sensorEvent.values[1]) < 1) ? 0 : sensorEvent.values[1];
+            float z = (Math.abs(sensorEvent.values[2]) < 1) ? 0 : sensorEvent.values[2];
 
-            float cumulativeAmplitude = (float) Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+            float cumulativeAmplitude = x + y + z;
             Log.v(TAG, String.format("%.2f", cumulativeAmplitude));
             thresholdValues.add(cumulativeAmplitude);
-//            sampleValues.add(cumulativeAmplitude);
-//            if (sampleValues.size() >= 20) {
-////                Log.v(TAG, "x: " + String.format("%.2f", x) + " y: " + String.format("%.2f", y) + " z: " + String.format("%.2f", z));
-//
-//                Collections.sort(sampleValues);
-//                float median = (sampleValues.get(sampleValues.size() / 2) + sampleValues.get(sampleValues.size() / 2 - 1)) / 2;
-//                thresholdValues.add(median);
-//                sampleValues.clear();
-//            }
         }
     }
 
