@@ -5,16 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.MediaScannerConnection;
-import android.os.Environment;
-import android.util.Log;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class RepManager implements SensorEventListener {
     private static final float
@@ -22,7 +13,6 @@ public class RepManager implements SensorEventListener {
             IGNORE_RANGE = 0.3f, // detect minimal change which we consider significant enough
             NO_MOTION = 0.0f;
 
-    private String currentDateTimeString = "";
     // we require DELAY_BUFFER_SIZE (9) * SENSOR_DELAY (~200ms) ~= 2 sec of idle state
     // used to determine start and end of an exercise
     private static final int DELAY_BUFFER_SIZE = 9;
@@ -34,13 +24,9 @@ public class RepManager implements SensorEventListener {
 
     private SensorManager senSensorManager;
     private Sensor senAccelerometer, senGyroscope;
+    private FileManager appFiles;
 
-    //debugg
-    File rawAccelero, rawGyro, filteredAccelero;
-
-    private static final String [] FOLDERS = {"/rawAccelero", "/rawGyro", "/filtered_accelero"};
     private static final String TAG = "RepManager";
-    private String PATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/RepMaster_debug";
 
     public RepManager(Context context) {
         senSensorManager = (SensorManager) context.getSystemService(context.SENSOR_SERVICE);
@@ -48,10 +34,14 @@ public class RepManager implements SensorEventListener {
         senGyroscope = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
     }
 
+    public void makeFilesVisibleOnPC(Context c) {
+        appFiles.makeFilesVisibleOnPC(c);
+    }
+
     public void register() {
         senSensorManager.registerListener(this, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this, senGyroscope , SensorManager.SENSOR_DELAY_NORMAL);
-        this.makeFile();
+        appFiles = new FileManager();
         numberOfReps = 0;
     }
 
@@ -62,42 +52,6 @@ public class RepManager implements SensorEventListener {
     public int getReps() {
         this.calculate();
         return numberOfReps;
-    }
-
-    private void makeFile() {
-        currentDateTimeString = DateFormat.getDateTimeInstance().format(new Date());
-        for(int i=0; i<FOLDERS.length; i++) {
-            File dir = new File(PATH + FOLDERS[i]);
-            dir.mkdirs();
-        }
-        rawAccelero = new File(PATH + FOLDERS[0], currentDateTimeString + ".txt");
-        rawGyro = new File(PATH + FOLDERS[1], currentDateTimeString + ".txt");
-        filteredAccelero = new File(PATH + FOLDERS[2], currentDateTimeString + ".txt");
-    }
-
-    public void makeFilesVisibleOnPC(Context context) {
-        MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[0] + "/" + currentDateTimeString + ".txt"}, null, null);
-        MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[1] + "/" + currentDateTimeString + ".txt"}, null, null);
-        MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[2] + "/" + currentDateTimeString + ".txt"}, null, null);
-    }
-
-    private String arrayToString(ArrayList<Float> array) {
-        String s = "";
-        for(int i=0; i<array.size(); i++) {
-            s += (i+1) + ". " + array.get(i) + "\n";
-        }
-        return s;
-    }
-    private void writeToFile(String data, File data_file) {
-        FileWriter writer = null;
-        try {
-            writer = new FileWriter(data_file, true);
-            writer.append(data);
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private int findStartIndex() {
@@ -168,11 +122,11 @@ public class RepManager implements SensorEventListener {
 
     private void calculate() {
         boolean isRising;
-        this.writeToFile(this.arrayToString(thresholdValues), rawAccelero);
-        this.writeToFile(this.arrayToString(deviceMotion), rawGyro);
+        appFiles.writeToFile(thresholdValues, 0);
+        appFiles.writeToFile(deviceMotion, 1);
         thresholdValues = this.cutoffFilter();
         thresholdValues = this.lowPassFilter(thresholdValues);
-        this.writeToFile(this.arrayToString(thresholdValues), filteredAccelero);
+        appFiles.writeToFile(thresholdValues, 2);
         isRising = (thresholdValues.get(1) > thresholdValues.get(0)) ? true : false; // TODO: this val is wrong(find first range of motion: up or down)
 
         float prevVal = thresholdValues.get(0),
@@ -185,7 +139,7 @@ public class RepManager implements SensorEventListener {
                 if (isRising == true && (currVal < prevVal)) {
                     // inc counter only on value raise
                     numberOfReps++;
-                    this.writeToFile("\n inc " + String.valueOf(numberOfReps) + " position " + (i+1) + "\n", filteredAccelero);
+                    appFiles.writeToFile("\n inc " + String.valueOf(numberOfReps) + " position " + (i+1) + "\n", 2);
                     isRising = false;
                 } else if (isRising == false && (currVal > prevVal)) {
                     isRising = true;
@@ -193,7 +147,7 @@ public class RepManager implements SensorEventListener {
                 prevVal = currVal;
             }
         }
-        this.writeToFile("\n Number of reps: " + String.valueOf(numberOfReps), filteredAccelero);
+        appFiles.writeToFile("\n Number of reps: " + String.valueOf(numberOfReps), 2);
         // reset values
         thresholdValues.clear();
         deviceMotion.clear();

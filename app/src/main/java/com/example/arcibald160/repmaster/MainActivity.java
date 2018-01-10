@@ -1,9 +1,7 @@
 package com.example.arcibald160.repmaster;
 
 import android.Manifest;
-import android.media.MediaScannerConnection;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -30,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
         progressBar = (ProgressBar)  findViewById(R.id.loadingCircle);
 
         mRepManager = new RepManager(this);
-
 
         // inital state
         toggleButton.setText("START");
