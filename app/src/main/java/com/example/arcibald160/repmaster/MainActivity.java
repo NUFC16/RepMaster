@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    TextView showValue;
+    TextView showValue, showExercise;
     RepManager mRepManager = null;
     ProgressBar progressBar;
 
@@ -24,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
 
         showValue = (TextView) findViewById(R.id.rep_number);
+        showExercise = (TextView) findViewById(R.id.show_exercise);
+
         final Button toggleButton = (Button) findViewById(R.id.toggle_btn);
         progressBar = (ProgressBar)  findViewById(R.id.loadingCircle);
 
@@ -46,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.INVISIBLE);
                     toggleButton.setText("START");
                     showValue.setText(String.format("%d", mRepManager.getReps()));
+                    showExercise.setText(mRepManager.getExcersise());
+
                 }
             }
         });

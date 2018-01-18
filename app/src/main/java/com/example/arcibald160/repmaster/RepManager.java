@@ -5,7 +5,10 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class RepManager implements SensorEventListener {
     private static final float
@@ -24,6 +27,7 @@ public class RepManager implements SensorEventListener {
     private ArrayList<ArrayList<Float>>
             gravityAxis = new ArrayList<ArrayList<Float>>(3);
 
+
     private SensorManager senSensorManager;
     private Sensor senAccelerometer, senGyroscope, senGravity;
     private FileManager appFiles;
@@ -36,8 +40,13 @@ public class RepManager implements SensorEventListener {
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         senGyroscope = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         senGravity = senSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+        gravityAxis.add(new ArrayList<Float>());
+        gravityAxis.add(new ArrayList<Float>());
+        gravityAxis.add(new ArrayList<Float>());
+        Log.v(TAG, String.valueOf(gravityAxis.size()));
     }
 
+    // this is FileManager method, but we need context of an activity
     public void makeFilesVisibleOnPC(Context c) {
         appFiles.makeFilesVisibleOnPC(c);
     }
@@ -60,10 +69,21 @@ public class RepManager implements SensorEventListener {
     }
 
     public String getExcersise(){
+        //raw gravitiy
+        appFiles.writeToFile(gravityAxis.get(0), 3);
+        appFiles.writeToFile(gravityAxis.get(1), 3);
+        appFiles.writeToFile(gravityAxis.get(2), 3);
+
         float xAvg, yAvg,zAvg;
         gravityAxis.set(0, this.cutoffFilter(gravityAxis.get(0)));
         gravityAxis.set(1, this.cutoffFilter(gravityAxis.get(0)));
         gravityAxis.set(2,this.cutoffFilter(gravityAxis.get(2)));
+
+        //cutoff gravity
+        //gravitiy
+        appFiles.writeToFile(gravityAxis.get(0), 3);
+        appFiles.writeToFile(gravityAxis.get(1), 3);
+        appFiles.writeToFile(gravityAxis.get(2), 3);
 
         float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f;
         for (int i = 0; i < gravityAxis.get(0).size(); i++){
@@ -76,21 +96,27 @@ public class RepManager implements SensorEventListener {
         yAvg = sumY / (float) gravityAxis.get(1).size();
         zAvg = sumZ / (float) gravityAxis.get(2).size();
 
+        String exercise = "Unknown exercise";
+
         if (xAvg > yAvg && xAvg > zAvg){
-            return "Push ups";
+            exercise = "Push ups";
         }
 
         else if (yAvg > xAvg && yAvg > zAvg){
-            return "Pull ups";
+            exercise =  "Pull ups";
 
         }
 
         else if (zAvg > xAvg && zAvg > yAvg){
-            return "Squats";
+            exercise = "Squats";
 
         }
+        gravityAxis.clear();
+        gravityAxis.add(new ArrayList<Float>());
+        gravityAxis.add(new ArrayList<Float>());
+        gravityAxis.add(new ArrayList<Float>());
 
-        return "Unknown exercise";
+        return exercise ;
 
     }
 
@@ -162,8 +188,10 @@ public class RepManager implements SensorEventListener {
 
     private void calculate() {
         boolean isRising;
+
         appFiles.writeToFile(thresholdValues, 0);
         appFiles.writeToFile(deviceMotion, 1);
+
         thresholdValues = this.cutoffFilter(thresholdValues);
         thresholdValues = this.lowPassFilter(thresholdValues);
         appFiles.writeToFile(thresholdValues, 2);
@@ -235,6 +263,7 @@ public class RepManager implements SensorEventListener {
             gravityAxis.get(0).add(x);
             gravityAxis.get(1).add(y);
             gravityAxis.get(2).add(z);
+
         }
     }
 
