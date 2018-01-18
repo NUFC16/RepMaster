@@ -21,10 +21,13 @@ public class RepManager implements SensorEventListener {
     private ArrayList<Float>
             thresholdValues = new ArrayList<Float>(),
             deviceMotion = new ArrayList<Float>();
+    private ArrayList<ArrayList<Float>>
+            gravityAxis = new ArrayList<ArrayList<Float>>(3);
 
     private SensorManager senSensorManager;
-    private Sensor senAccelerometer, senGyroscope;
+    private Sensor senAccelerometer, senGyroscope, senGravity;
     private FileManager appFiles;
+
 
     private static final String TAG = "RepManager";
 
@@ -32,6 +35,7 @@ public class RepManager implements SensorEventListener {
         senSensorManager = (SensorManager) context.getSystemService(context.SENSOR_SERVICE);
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         senGyroscope = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        senGravity = senSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
     }
 
     public void makeFilesVisibleOnPC(Context c) {
@@ -41,6 +45,7 @@ public class RepManager implements SensorEventListener {
     public void register() {
         senSensorManager.registerListener(this, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this, senGyroscope , SensorManager.SENSOR_DELAY_NORMAL);
+        senSensorManager.registerListener(this,senGravity, SensorManager.SENSOR_DELAY_NORMAL);
         appFiles = new FileManager();
         numberOfReps = 0;
     }
@@ -52,6 +57,41 @@ public class RepManager implements SensorEventListener {
     public int getReps() {
         this.calculate();
         return numberOfReps;
+    }
+
+    public String getExcersise(){
+        float xAvg, yAvg,zAvg;
+        gravityAxis.set(0, this.cutoffFilter(gravityAxis.get(0)));
+        gravityAxis.set(1, this.cutoffFilter(gravityAxis.get(0)));
+        gravityAxis.set(2,this.cutoffFilter(gravityAxis.get(2)));
+
+        float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f;
+        for (int i = 0; i < gravityAxis.get(0).size(); i++){
+            sumX += gravityAxis.get(0).get(i);
+            sumY += gravityAxis.get(1).get(i);
+            sumZ += gravityAxis.get(2).get(i);
+        }
+
+        xAvg = sumX / (float) gravityAxis.get(0).size();
+        yAvg = sumY / (float) gravityAxis.get(1).size();
+        zAvg = sumZ / (float) gravityAxis.get(2).size();
+
+        if (xAvg > yAvg && xAvg > zAvg){
+            return "Push ups";
+        }
+
+        else if (yAvg > xAvg && yAvg > zAvg){
+            return "Pull ups";
+
+        }
+
+        else if (zAvg > xAvg && zAvg > yAvg){
+            return "Squats";
+
+        }
+
+        return "Unknown exercise";
+
     }
 
     private int findStartIndex() {
@@ -98,7 +138,7 @@ public class RepManager implements SensorEventListener {
         return thresholdValues.size() - 1;
     }
 
-    private ArrayList<Float> cutoffFilter() {
+    private ArrayList<Float> cutoffFilter(ArrayList<Float> values) {
         ArrayList<Float> cutoffArray = new ArrayList<Float>();
 
         int start = this.findStartIndex(),
@@ -106,17 +146,17 @@ public class RepManager implements SensorEventListener {
 
         // create subarray
         for (int i=start; i<=end; i++) {
-            cutoffArray.add(thresholdValues.get(i));
+            cutoffArray.add(values.get(i));
         }
 
         if (cutoffArray.size() == 0) {
-            return thresholdValues;
+            return values;
         }
 
         // add element on last position that is lower then last element of thresholdValues
         // this is needed in order to count last rep if motion was on its way up but never felt down
-        int lastIdx = thresholdValues.size() - 1;
-        cutoffArray.add(thresholdValues.get(lastIdx) - 2.0f);
+        int lastIdx = values.size() - 1;
+        cutoffArray.add(values.get(lastIdx) - 2.0f);
         return cutoffArray;
     }
 
@@ -124,7 +164,7 @@ public class RepManager implements SensorEventListener {
         boolean isRising;
         appFiles.writeToFile(thresholdValues, 0);
         appFiles.writeToFile(deviceMotion, 1);
-        thresholdValues = this.cutoffFilter();
+        thresholdValues = this.cutoffFilter(thresholdValues);
         thresholdValues = this.lowPassFilter(thresholdValues);
         appFiles.writeToFile(thresholdValues, 2);
         isRising = (thresholdValues.get(1) > thresholdValues.get(0)) ? true : false; // TODO: this val is wrong(find first range of motion: up or down)
@@ -186,6 +226,15 @@ public class RepManager implements SensorEventListener {
             float cumulativeMotion = x + y + z;
 //            Log.v(TAG, String.format("Motion %.2f", cumulativeMotion));
             deviceMotion.add(cumulativeMotion);
+        }
+
+        if (mySensor.getType() == Sensor.TYPE_GRAVITY){
+            float x = Math.abs(sensorEvent.values[0]);
+            float y = Math.abs(sensorEvent.values[1]);
+            float z = Math.abs(sensorEvent.values[2]);
+            gravityAxis.get(0).add(x);
+            gravityAxis.get(1).add(y);
+            gravityAxis.get(2).add(z);
         }
     }
 
