@@ -9,43 +9,33 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 
 public class FileManager {
-    private static final String [] FOLDERS = {"/rawAccelero", "/rawGyro", "/filtered_accelero", "/rawGravity", "/cutoffGravity", ""};
+    private static String[] FOLDERS;
     private String
             PATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/RepMaster_debug",
             currentDateTimeString = "";
     //debugg
-    File rawAccelero, rawGyro, filteredAccelero, rawGravity, cutoffGravity;
-    ArrayList<File> appFiles = new ArrayList<File>(Arrays.asList(rawAccelero, rawGyro, filteredAccelero, rawGravity, cutoffGravity));
+    ArrayList<ArrayList<File>> appFiles = new ArrayList<ArrayList<File>>();;
 
-    public FileManager() {
+    public FileManager(String[] folders) {
+        FOLDERS = folders.clone();
         currentDateTimeString = DateFormat.getDateTimeInstance().format(new Date());
         for(int i=0; i<FOLDERS.length; i++) {
             File dir = new File(PATH + FOLDERS[i]);
             dir.mkdirs();
+            // Make ArrayList for every folder
+            appFiles.add(new ArrayList<File>());
         }
-        for(int i=0; i<appFiles.size(); i++) {
-            appFiles.set(i, new File(PATH + FOLDERS[0], currentDateTimeString + ".txt"));
-        }
-//        rawAccelero = new File(PATH + FOLDERS[0], currentDateTimeString + ".txt");
-//        rawGyro = new File(PATH + FOLDERS[1], currentDateTimeString + ".txt");
-//        filteredAccelero = new File(PATH + FOLDERS[2], currentDateTimeString + ".txt");
-//        rawGravity = new File(PATH + FOLDERS[3], currentDateTimeString + ".txt");
-//        cutoffGravity = new File(PATH + FOLDERS[4], currentDateTimeString + ".txt");
     }
 
     public void makeFilesVisibleOnPC(Context context) {
         for(int i=0; i<appFiles.size(); i++) {
-            MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[i] + "/" + currentDateTimeString + ".txt"}, null, null);
+            for(int j=0; j<appFiles.get(i).size(); j++) {
+                MediaScannerConnection.scanFile(context, new String[]{PATH + FOLDERS[i] + "/" + appFiles.get(i).get(j).getName()}, null, null);
+            }
         }
-//        MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[0] + "/" + currentDateTimeString + ".txt"}, null, null);
-//        MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[1] + "/" + currentDateTimeString + ".txt"}, null, null);
-//        MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[2] + "/" + currentDateTimeString + ".txt"}, null, null);
-//        MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[3] + "/" + currentDateTimeString + ".txt"}, null, null);
-//        MediaScannerConnection.scanFile(context, new String[] {PATH + FOLDERS[4] + "/" + currentDateTimeString + ".txt"}, null, null);
     }
 
     private String arrayToString(ArrayList<Float> array) {
@@ -56,15 +46,24 @@ public class FileManager {
         return s;
     }
 
-    private File getFile(int i) {
-//        File [] l = {rawAccelero, rawGyro, filteredAccelero, rawGravity, cutoffGravity};
-        return appFiles.get(i);
+    private File getFile(int i, String filename) {
+        filename = (filename == null) ? currentDateTimeString + ".txt" : filename + currentDateTimeString + ".txt";
+
+        for (File file : appFiles.get(i)) {
+            if (file.getName().contains(filename)) {
+                return file;
+            }
+        }
+        appFiles.get(i).add(new File(PATH + FOLDERS[i], filename));
+
+        int lastIndex = appFiles.get(i).size() -1 ;
+        return appFiles.get(i).get(lastIndex);
     }
 
-    public void writeToFile(String data, int i) {
+    private void writeToFile(String data, File file) {
         FileWriter writer = null;
         try {
-            writer = new FileWriter(this.getFile(i), true);
+            writer = new FileWriter(file, true);
             writer.append(data);
             writer.flush();
             writer.close();
@@ -73,7 +72,16 @@ public class FileManager {
         }
     }
 
-    public void writeToFile(ArrayList<Float> array, int i) {
-        writeToFile(this.arrayToString(array), i);
+    public void writeToFile(ArrayList<Float> array, int folderIndex) {
+        writeToFile(this.arrayToString(array), getFile(folderIndex, null));
+    }
+
+    // write to certain directory with custom filename
+    public void writeToFile(ArrayList<Float> array, int folderIndex, String filename) {
+        writeToFile(this.arrayToString(array), getFile(folderIndex, filename));
+    }
+
+    public void writeToFile(String data, int folderIndex) {
+        writeToFile(data, getFile(folderIndex, null));
     }
 }

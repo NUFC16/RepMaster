@@ -43,12 +43,12 @@ public class MainActivity extends AppCompatActivity {
                     toggleButton.setText("END");
                 } else {
                     mRepManager.unregister();
-                    mRepManager.makeFilesVisibleOnPC(MainActivity.this);
                     showValue.setVisibility(View.VISIBLE);
                     progressBar.setVisibility(View.INVISIBLE);
                     toggleButton.setText("START");
                     showValue.setText(String.format("%d", mRepManager.getReps()));
                     showExercise.setText(mRepManager.getExcersise());
+                    mRepManager.makeFilesVisibleOnPC(MainActivity.this);
 
                 }
             }

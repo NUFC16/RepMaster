@@ -8,17 +8,9 @@ import android.hardware.SensorManager;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class RepManager implements SensorEventListener {
-    private static final float
-            ALPHA = 0.25f, // low pass filter const
-            IGNORE_RANGE = 0.3f, // detect minimal change which we consider significant enough
-            NO_MOTION = 0.0f;
-
-    // we require DELAY_BUFFER_SIZE (9) * SENSOR_DELAY (~200ms) ~= 2 sec of idle state
-    // used to determine start and end of an exercise
-    private static final int DELAY_BUFFER_SIZE = 9;
+    private static final float IGNORE_RANGE = 0.3f; // detect minimal change which we consider significant enough
 
     private int numberOfReps = 0;
     private ArrayList<Float>
@@ -31,6 +23,7 @@ public class RepManager implements SensorEventListener {
     private SensorManager senSensorManager;
     private Sensor senAccelerometer, senGyroscope, senGravity;
     private FileManager appFiles;
+    private DataFilter dFilter;
 
 
     private static final String TAG = "RepManager";
@@ -40,6 +33,8 @@ public class RepManager implements SensorEventListener {
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         senGyroscope = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         senGravity = senSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+        dFilter = new DataFilter();
+
         gravityAxis.add(new ArrayList<Float>());
         gravityAxis.add(new ArrayList<Float>());
         gravityAxis.add(new ArrayList<Float>());
@@ -55,7 +50,7 @@ public class RepManager implements SensorEventListener {
         senSensorManager.registerListener(this, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this, senGyroscope , SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this,senGravity, SensorManager.SENSOR_DELAY_NORMAL);
-        appFiles = new FileManager();
+        appFiles = new FileManager(new String[]{"/rawAccelero", "/rawGyro", "/filtered_accelero", "/rawGravity", "/cutoffGravity"});
         numberOfReps = 0;
     }
 
@@ -70,20 +65,20 @@ public class RepManager implements SensorEventListener {
 
     public String getExcersise(){
         //raw gravitiy
-        appFiles.writeToFile(gravityAxis.get(0), 3);
-        appFiles.writeToFile(gravityAxis.get(1), 3);
-        appFiles.writeToFile(gravityAxis.get(2), 3);
+        appFiles.writeToFile(gravityAxis.get(0), 3, "RawgravityX");
+        appFiles.writeToFile(gravityAxis.get(1), 3, "RawgravityY");
+        appFiles.writeToFile(gravityAxis.get(2), 3, "RawgravityZ");
 
         float xAvg, yAvg,zAvg;
-        gravityAxis.set(0, this.cutoffFilter(gravityAxis.get(0)));
-        gravityAxis.set(1, this.cutoffFilter(gravityAxis.get(0)));
-        gravityAxis.set(2,this.cutoffFilter(gravityAxis.get(2)));
+        gravityAxis.set(0, dFilter.cutoffFilter(gravityAxis.get(0), deviceMotion));
+        gravityAxis.set(1, dFilter.cutoffFilter(gravityAxis.get(0), deviceMotion));
+        gravityAxis.set(2, dFilter.cutoffFilter(gravityAxis.get(2), deviceMotion));
 
         //cutoff gravity
         //gravitiy
-        appFiles.writeToFile(gravityAxis.get(0), 3);
-        appFiles.writeToFile(gravityAxis.get(1), 3);
-        appFiles.writeToFile(gravityAxis.get(2), 3);
+        appFiles.writeToFile(gravityAxis.get(0), 4, "GravityX");
+        appFiles.writeToFile(gravityAxis.get(1), 4, "GravityY");
+        appFiles.writeToFile(gravityAxis.get(2), 4, "GravityZ");
 
         float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f;
         for (int i = 0; i < gravityAxis.get(0).size(); i++){
@@ -120,80 +115,14 @@ public class RepManager implements SensorEventListener {
 
     }
 
-    private int findStartIndex() {
-        boolean writeOnChange = false;
-        int counter = 0,
-                endIdx = deviceMotion.size() / 2 - 1;
-
-        for(int i=0; i<=endIdx; i++) {
-
-            if (deviceMotion.get(i) == NO_MOTION) {
-                counter++;
-            } else if (writeOnChange == true) {
-                return i;
-            } else {
-                counter = 0;
-            }
-
-            if (counter >= DELAY_BUFFER_SIZE) {
-                writeOnChange = true;
-            }
-        }
-        return 0;
-    }
-
-    private int findEndIndex() {
-        boolean writeOnChange = false;
-        int counter = 0,
-            startIdx = deviceMotion.size() - 2,
-            endIdx = deviceMotion.size() / 2;
-
-        for(int i=startIdx; i>=endIdx; i--) {
-            if ( deviceMotion.get(i) == NO_MOTION) {
-                counter++;
-            } else if (writeOnChange == true ) {
-                return i;
-            } else {
-                counter = 0;
-            }
-
-            if (counter >= DELAY_BUFFER_SIZE) {
-                writeOnChange = true;
-            }
-        }
-        return thresholdValues.size() - 1;
-    }
-
-    private ArrayList<Float> cutoffFilter(ArrayList<Float> values) {
-        ArrayList<Float> cutoffArray = new ArrayList<Float>();
-
-        int start = this.findStartIndex(),
-            end = this.findEndIndex();
-
-        // create subarray
-        for (int i=start; i<=end; i++) {
-            cutoffArray.add(values.get(i));
-        }
-
-        if (cutoffArray.size() == 0) {
-            return values;
-        }
-
-        // add element on last position that is lower then last element of thresholdValues
-        // this is needed in order to count last rep if motion was on its way up but never felt down
-        int lastIdx = values.size() - 1;
-        cutoffArray.add(values.get(lastIdx) - 2.0f);
-        return cutoffArray;
-    }
-
     private void calculate() {
         boolean isRising;
 
         appFiles.writeToFile(thresholdValues, 0);
         appFiles.writeToFile(deviceMotion, 1);
 
-        thresholdValues = this.cutoffFilter(thresholdValues);
-        thresholdValues = this.lowPassFilter(thresholdValues);
+        thresholdValues = dFilter.cutoffFilter(thresholdValues, deviceMotion);
+        thresholdValues = dFilter.lowPassFilter(thresholdValues);
         appFiles.writeToFile(thresholdValues, 2);
         isRising = (thresholdValues.get(1) > thresholdValues.get(0)) ? true : false; // TODO: this val is wrong(find first range of motion: up or down)
 
@@ -221,15 +150,7 @@ public class RepManager implements SensorEventListener {
         deviceMotion.clear();
     }
 
-    protected ArrayList<Float> lowPassFilter(ArrayList<Float> input) {
-        ArrayList<Float> output = new ArrayList<Float>();
-        output.add(input.get(0)); // first element
 
-        for (int i=1; i<input.size(); i++) {
-            output.add(output.get(i-1) + ALPHA * (input.get(i) - output.get(i-1)));
-        }
-        return output;
-    }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
