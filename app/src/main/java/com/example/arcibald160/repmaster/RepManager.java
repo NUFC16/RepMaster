@@ -71,7 +71,7 @@ public class RepManager implements SensorEventListener {
 
         float xAvg, yAvg,zAvg;
         gravityAxis.set(0, dFilter.cutoffFilter(gravityAxis.get(0), deviceMotion));
-        gravityAxis.set(1, dFilter.cutoffFilter(gravityAxis.get(0), deviceMotion));
+        gravityAxis.set(1, dFilter.cutoffFilter(gravityAxis.get(1), deviceMotion));
         gravityAxis.set(2, dFilter.cutoffFilter(gravityAxis.get(2), deviceMotion));
 
         //cutoff gravity
@@ -80,7 +80,7 @@ public class RepManager implements SensorEventListener {
         appFiles.writeToFile(gravityAxis.get(1), 4, "GravityY");
         appFiles.writeToFile(gravityAxis.get(2), 4, "GravityZ");
 
-        float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f;
+        float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f, sumAll = 0.0f;
         for (int i = 0; i < gravityAxis.get(0).size(); i++){
             sumX += gravityAxis.get(0).get(i);
             sumY += gravityAxis.get(1).get(i);
@@ -91,21 +91,28 @@ public class RepManager implements SensorEventListener {
         yAvg = sumY / (float) gravityAxis.get(1).size();
         zAvg = sumZ / (float) gravityAxis.get(2).size();
 
+
+        appFiles.writeToFile("\n Prosjek: " + xAvg, 4, "GravityX");
+        appFiles.writeToFile("\n Prosjek: " + yAvg, 4, "GravityY");
+        appFiles.writeToFile("\n Prosjek: " + zAvg, 4, "GravityZ");
+
         String exercise = "Unknown exercise";
 
-        if (xAvg > yAvg && xAvg > zAvg){
+        sumAll = xAvg + yAvg + zAvg;
+        float [] axisPercentageVector = {xAvg / sumAll, yAvg / sumAll, zAvg / sumAll};
+
+        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[0], 4, "GravityX");
+        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[1], 4, "GravityY");
+        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[2] + " sumall " + sumAll, 4, "GravityZ");
+
+        if (axisPercentageVector[1] >= 0.80f) { // dominant x
+            exercise =  "Pull ups";
+        } else if (axisPercentageVector[1] >= 0.40f && axisPercentageVector[2] >= 0.28f) { // dominant z(2) and y(1)
+            exercise = "Squats";
+        } else if (axisPercentageVector[0] >= 0.28f && axisPercentageVector[2] >= 0.40f) { // dominant x(2) and z(1)
             exercise = "Push ups";
         }
 
-        else if (yAvg > xAvg && yAvg > zAvg){
-            exercise =  "Pull ups";
-
-        }
-
-        else if (zAvg > xAvg && zAvg > yAvg){
-            exercise = "Squats";
-
-        }
         gravityAxis.clear();
         gravityAxis.add(new ArrayList<Float>());
         gravityAxis.add(new ArrayList<Float>());

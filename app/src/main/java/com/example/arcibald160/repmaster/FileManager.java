@@ -47,7 +47,7 @@ public class FileManager {
     }
 
     private File getFile(int i, String filename) {
-        filename = (filename == null) ? currentDateTimeString + ".txt" : filename + currentDateTimeString + ".txt";
+        filename = (filename == null) ? currentDateTimeString + ".txt" : currentDateTimeString + " " + filename + ".txt";
 
         for (File file : appFiles.get(i)) {
             if (file.getName().contains(filename)) {
@@ -83,5 +83,9 @@ public class FileManager {
 
     public void writeToFile(String data, int folderIndex) {
         writeToFile(data, getFile(folderIndex, null));
+    }
+
+    public void writeToFile(String data, int folderIndex, String filename) {
+        writeToFile(data, getFile(folderIndex, filename));
     }
 }
