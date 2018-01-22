@@ -6,6 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 
@@ -19,7 +20,7 @@ public class RepManager implements SensorEventListener {
     private ArrayList<ArrayList<Float>>
             gravityAxis = new ArrayList<ArrayList<Float>>(3);
 
-
+    private TextView showValue;
     private SensorManager senSensorManager;
     private Sensor senAccelerometer, senGyroscope, senGravity;
     private FileManager appFiles;
@@ -28,12 +29,13 @@ public class RepManager implements SensorEventListener {
 
     private static final String TAG = "RepManager";
 
-    public RepManager(Context context) {
+    public RepManager(Context context, TextView showText) {
         senSensorManager = (SensorManager) context.getSystemService(context.SENSOR_SERVICE);
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         senGyroscope = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         senGravity = senSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         dFilter = new DataFilter();
+        this.showValue = showText;
 
         gravityAxis.add(new ArrayList<Float>());
         gravityAxis.add(new ArrayList<Float>());
@@ -62,6 +64,7 @@ public class RepManager implements SensorEventListener {
         this.calculate();
         return numberOfReps;
     }
+
 
     public String getExcersise(){
         //raw gravitiy
@@ -128,7 +131,7 @@ public class RepManager implements SensorEventListener {
         appFiles.writeToFile(thresholdValues, 0);
         appFiles.writeToFile(deviceMotion, 1);
 
-        thresholdValues = dFilter.cutoffFilter(thresholdValues, deviceMotion);
+        //thresholdValues = dFilter.cutoffFilter(thresholdValues, deviceMotion);
         thresholdValues = dFilter.lowPassFilter(thresholdValues);
         appFiles.writeToFile(thresholdValues, 2);
         isRising = (thresholdValues.get(1) > thresholdValues.get(0)) ? true : false; // TODO: this val is wrong(find first range of motion: up or down)
@@ -192,6 +195,12 @@ public class RepManager implements SensorEventListener {
             gravityAxis.get(1).add(y);
             gravityAxis.get(2).add(z);
 
+        }
+
+        if (thresholdValues.size() >= 10) {
+            Log.d(TAG, "Ušao sam u if\n");
+            Log.d(TAG,"reps: " + String.valueOf(numberOfReps) + "\n");
+            showValue.setText(String.valueOf(getReps()));
         }
     }
 

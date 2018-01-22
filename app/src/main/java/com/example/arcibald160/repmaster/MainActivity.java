@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
         final Button toggleButton = (Button) findViewById(R.id.toggle_btn);
         progressBar = (ProgressBar)  findViewById(R.id.loadingCircle);
 
-        mRepManager = new RepManager(this);
+        mRepManager = new RepManager(this, showValue);
 
         // inital state
         toggleButton.setText("START");
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (toggleButton.getText().toString() == "START") {
-                    showValue.setVisibility(View.INVISIBLE);
+                    showValue.setVisibility(View.VISIBLE);
                     progressBar.setVisibility(View.VISIBLE);
                     mRepManager.register();
                     toggleButton.setText("END");
@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
                     showValue.setVisibility(View.VISIBLE);
                     progressBar.setVisibility(View.INVISIBLE);
                     toggleButton.setText("START");
-                    showValue.setText(String.format("%d", mRepManager.getReps()));
                     showExercise.setText(mRepManager.getExcersise());
                     mRepManager.makeFilesVisibleOnPC(MainActivity.this);
 
