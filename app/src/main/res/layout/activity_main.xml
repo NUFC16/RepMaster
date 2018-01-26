@@ -66,13 +66,14 @@
         app:layout_constraintVertical_bias="0.0"
         tools:text="START" />
 
+
     <TextView
         android:id="@+id/show_exercise"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/loadingCircle"
-        android:layout_alignStart="@+id/loadingCircle"
-        android:layout_below="@+id/loadingCircle"
+        android:layout_alignLeft="@+id/rep_number"
+        android:layout_alignStart="@+id/rep_number"
+        android:layout_below="@+id/rep_number"
         android:layout_marginBottom="196dp"
         android:text="exer"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -80,7 +81,6 @@
         app:layout_constraintRight_toRightOf="parent" />
 
     <RelativeLayout
-        android:id="@+id/show_exercise"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
