@@ -19,9 +19,11 @@ public class FileManager {
     //debugg
     ArrayList<ArrayList<File>> appFiles = new ArrayList<ArrayList<File>>();;
 
-    public FileManager(String[] folders) {
+    public FileManager(String[] folders, String username, String exercise, String realNumberOfReps) {
         FOLDERS = folders.clone();
-        currentDateTimeString = DateFormat.getDateTimeInstance().format(new Date());
+        PATH += "/" + username + "/" + exercise;
+        currentDateTimeString = DateFormat.getDateTimeInstance().format(new Date()) + " (" + realNumberOfReps + ")";
+
         for(int i=0; i<FOLDERS.length; i++) {
             File dir = new File(PATH + FOLDERS[i]);
             dir.mkdirs();

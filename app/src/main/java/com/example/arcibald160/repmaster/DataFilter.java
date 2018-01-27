@@ -1,12 +1,6 @@
 package com.example.arcibald160.repmaster;
 
-import android.provider.ContactsContract;
-
 import java.util.ArrayList;
-
-/**
- * Created by arcibald160 on 20.01.18..
- */
 
 public class DataFilter {
 

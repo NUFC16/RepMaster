@@ -18,7 +18,7 @@
         android:layout_marginTop="120dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="0"
+        android:text="@string/label_RepsDefault"
         android:textAlignment="center"
         android:textColor="@android:color/background_dark"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -42,7 +42,7 @@
         android:layout_weight="1"
         android:fontFamily="sans-serif"
         android:gravity="center"
-        android:text="Broj odrađenih ponavljanja"
+        android:text="@string/label_numberOfReps"
         android:textAlignment="center"
         android:textColor="@android:color/background_dark"
         app:layout_constraintEnd_toEndOf="parent"
@@ -56,15 +56,14 @@
         android:layout_marginBottom="8dp"
         android:layout_marginStart="44dp"
         android:layout_marginTop="104dp"
-        android:text="Start"
+        android:text="@string/start"
         android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.421"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/rep_number"
-        app:layout_constraintVertical_bias="0.0"
-        tools:text="START" />
+        app:layout_constraintVertical_bias="0.0" />
 
 
     <TextView
@@ -75,7 +74,7 @@
         android:layout_alignStart="@+id/rep_number"
         android:layout_below="@+id/rep_number"
         android:layout_marginBottom="196dp"
-        android:text="exer"
+        android:text="@string/label_exerciseDefault"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
@@ -84,8 +83,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        tools:layout_editor_absoluteX="0dp"
-        tools:layout_editor_absoluteY="0dp">
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <ProgressBar
             android:id="@+id/loadingCircle"

@@ -2,9 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/miCompose"
+        android:id="@+id/settings_button"
         android:icon="@android:drawable/ic_menu_manage"
-        app:showAsAction="ifRoom"
-        android:title="Compose">
-    </item>
+        android:title="@string/app_name"
+        app:showAsAction="ifRoom"></item>
 </menu>

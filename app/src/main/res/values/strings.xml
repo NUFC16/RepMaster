@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">RepMaster</string>
+    <string name="settings">Settings</string>
+    <string name="ok">Apply</string>
+    <string name="cancel">Cancel</string>
+    <string name="label_numberOfReps">Number of counted reps</string>
+    <string name="label_exerciseDefault">Type of exercise</string>
+    <string name="label_RepsDefault">0</string>
+    <string name="label_username">Enter username</string>
+    <string name="default_username">DefaultUsername</string>
+    <string name="default_exercise">DefaultExercise</string>
+    <string name="default_realRepNumber">10</string>
+    <string name="start">START</string>
+    <string name="end">END</string>
+    <string-array name="exercise_array">
+        <item>Squats</item>
+        <item>Push-ups</item>
+        <item>Pull-ups</item>
+    </string-array>
 </resources>

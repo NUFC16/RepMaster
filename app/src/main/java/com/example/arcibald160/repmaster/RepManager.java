@@ -46,11 +46,13 @@ public class RepManager implements SensorEventListener {
         appFiles.makeFilesVisibleOnPC(c);
     }
 
-    public void register() {
+    public void register(String username, String exercise, String realNumberOfReps) {
         senSensorManager.registerListener(this, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this, senGyroscope , SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this,senGravity, SensorManager.SENSOR_DELAY_NORMAL);
-        appFiles = new FileManager(new String[]{"/rawAccelero", "/rawGyro", "/filtered_accelero", "/rawGravity", "/cutoffGravity"});
+
+        String [] folders = new String[]{"/rawAccelero", "/rawGyro", "/filtered_accelero", "/rawGravity", "/cutoffGravity"};
+        appFiles = new FileManager(folders, username, exercise, realNumberOfReps);
         numberOfReps = 0;
     }
 
