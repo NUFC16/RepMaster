@@ -59,6 +59,8 @@ public class RepManager implements SensorEventListener {
 
     public void unregister() {
         senSensorManager.unregisterListener(this);
+        thresholdValues.clear();
+        filteredData.clear();
     }
 
     public int getReps() {
@@ -156,9 +158,6 @@ public class RepManager implements SensorEventListener {
             }
         }
         appFiles.writeToFile("\n Number of reps: " + String.valueOf(numberOfReps), 2);
-        // reset values
-        //thresholdValues.clear();
-        //deviceMotion.clear();
         filteredData.clear();
     }
 

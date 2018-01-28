@@ -1,6 +1,9 @@
 package com.example.arcibald160.repmaster;
 
 import android.Manifest;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
+import android.os.CountDownTimer;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,6 +17,21 @@ public class MainActivity extends AppCompatActivity {
     TextView showValue, showExercise;
     RepManager mRepManager = null;
     ProgressBar progressBar;
+    ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+    CountDownTimer timer = new CountDownTimer(5000,1000) {
+        @Override
+        public void onTick(long l) {
+            tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 100);
+
+        }
+
+        @Override
+        public void onFinish() {
+            tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 500);
+            mRepManager.register();
+
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
                 if (toggleButton.getText().toString() == "START") {
                     showValue.setVisibility(View.VISIBLE);
                     progressBar.setVisibility(View.VISIBLE);
-                    mRepManager.register();
+                    timer.start();
                     toggleButton.setText("END");
                 } else {
                     mRepManager.unregister();
