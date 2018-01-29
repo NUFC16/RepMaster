@@ -9,7 +9,7 @@
     <string name="label_username">Enter username</string>
     <string name="default_username">DefaultUsername</string>
     <string name="default_exercise">DefaultExercise</string>
-    <string name="default_realRepNumber">10</string>
+    <string name="default_realRepNumber">5</string>
     <string name="start">START</string>
     <string name="end">END</string>
     <string-array name="exercise_array">

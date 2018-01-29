@@ -11,12 +11,16 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class RepManager implements SensorEventListener {
+    /*
+    cutoff filtar is removed in this version -> real time calculation (start on sound signal, end on desired rep count)
+    gyroscope is thus not needed
+     */
     private static final float IGNORE_RANGE = 0.4f; // detect minimal change which we consider significant enough
 
     private int numberOfReps = 0;
     private ArrayList<Float>
-            thresholdValues = new ArrayList<Float>(),
-            deviceMotion = new ArrayList<Float>();
+            thresholdValues = new ArrayList<Float>();
+//            deviceMotion = new ArrayList<Float>();
     private ArrayList<ArrayList<Float>>
             gravityAxis = new ArrayList<ArrayList<Float>>(3);
 
@@ -61,8 +65,6 @@ public class RepManager implements SensorEventListener {
 
     public void unregister() {
         senSensorManager.unregisterListener(this);
-        thresholdValues.clear();
-        filteredData.clear();
     }
 
     public int getReps() {
@@ -88,21 +90,20 @@ public class RepManager implements SensorEventListener {
     }
 
     private float [] calculate_exercise() {
-        //raw gravitiy
-        appFiles.writeToFile(gravityAxis.get(0), 3, "RawgravityX");
-        appFiles.writeToFile(gravityAxis.get(1), 3, "RawgravityY");
-        appFiles.writeToFile(gravityAxis.get(2), 3, "RawgravityZ");
+        //raw gravity
+//        appFiles.writeToFile(gravityAxis.get(0), 3, "RawgravityX", false);
+//        appFiles.writeToFile(gravityAxis.get(1), 3, "RawgravityY", false);
+//        appFiles.writeToFile(gravityAxis.get(2), 3, "RawgravityZ", false);
 
         float xAvg, yAvg,zAvg;
-        gravityAxis.set(0, dFilter.cutoffFilter(gravityAxis.get(0), this.deviceMotion));
-        gravityAxis.set(1, dFilter.cutoffFilter(gravityAxis.get(1), this.deviceMotion));
-        gravityAxis.set(2, dFilter.cutoffFilter(gravityAxis.get(2), this.deviceMotion));
+//        gravityAxis.set(0, dFilter.cutoffFilter(gravityAxis.get(0), this.deviceMotion));
+//        gravityAxis.set(1, dFilter.cutoffFilter(gravityAxis.get(1), this.deviceMotion));
+//        gravityAxis.set(2, dFilter.cutoffFilter(gravityAxis.get(2), this.deviceMotion));
 
         //cutoff gravity
-        //gravitiy
-        appFiles.writeToFile(gravityAxis.get(0), 4, "GravityX");
-        appFiles.writeToFile(gravityAxis.get(1), 4, "GravityY");
-        appFiles.writeToFile(gravityAxis.get(2), 4, "GravityZ");
+        appFiles.writeToFile(gravityAxis.get(0), 4, "GravityX", false);
+        appFiles.writeToFile(gravityAxis.get(1), 4, "GravityY", false);
+        appFiles.writeToFile(gravityAxis.get(2), 4, "GravityZ", false);
 
         float sumX = 0.0f, sumY = 0.0f, sumZ = 0.0f, sumAll = 0.0f;
         for (int i = 0; i < gravityAxis.get(0).size(); i++){
@@ -116,16 +117,16 @@ public class RepManager implements SensorEventListener {
         zAvg = sumZ / (float) gravityAxis.get(2).size();
 
 
-        appFiles.writeToFile("\n Prosjek: " + xAvg, 4, "GravityX");
-        appFiles.writeToFile("\n Prosjek: " + yAvg, 4, "GravityY");
-        appFiles.writeToFile("\n Prosjek: " + zAvg, 4, "GravityZ");
+        appFiles.writeToFile("\n Average: " + xAvg, 4, "GravityX", true);
+        appFiles.writeToFile("\n Average: " + yAvg, 4, "GravityY", true);
+        appFiles.writeToFile("\n Average: " + zAvg, 4, "GravityZ", true);
 
         sumAll = xAvg + yAvg + zAvg;
         float [] axisPercentageVector = {xAvg / sumAll, yAvg / sumAll, zAvg / sumAll};
 
-        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[0], 4, "GravityX");
-        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[1], 4, "GravityY");
-        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[2] + " sumall " + sumAll, 4, "GravityZ");
+        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[0], 4, "GravityX", true);
+        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[1], 4, "GravityY", true);
+        appFiles.writeToFile("\n Percentage: " + axisPercentageVector[2] + " sumall " + sumAll, 4, "GravityZ", true);
 
         return axisPercentageVector;
     }
@@ -133,12 +134,12 @@ public class RepManager implements SensorEventListener {
     private void calculate() {
         boolean isRising;
         numberOfReps = 0;
-        appFiles.writeToFile(thresholdValues, 0);
-        appFiles.writeToFile(deviceMotion, 1);
+        appFiles.writeToFile(thresholdValues, 0, false);
+//        appFiles.writeToFile(deviceMotion, 1, false);
 
         //thresholdValues = dFilter.cutoffFilter(thresholdValues, deviceMotion);
         filteredData = dFilter.lowPassFilter(thresholdValues);
-        appFiles.writeToFile(filteredData, 2);
+        appFiles.writeToFile(filteredData, 2, false);
         isRising = (filteredData.get(1) > filteredData.get(0)) ? true : false; // TODO: this val is wrong(find first range of motion: up or down)
 
         float prevVal = filteredData.get(0),
@@ -151,7 +152,7 @@ public class RepManager implements SensorEventListener {
                 if (isRising == true && (currVal < prevVal)) {
                     // inc counter only on value raise
                     numberOfReps++;
-                    appFiles.writeToFile("\n inc " + String.valueOf(numberOfReps) + " position " + (i+1) + "\n", 2);
+                    appFiles.writeToFile("\n inc " + String.valueOf(numberOfReps) + " position " + (i+1) + "\n", 2,true);
                     isRising = false;
                 } else if (isRising == false && (currVal > prevVal)) {
                     isRising = true;
@@ -159,14 +160,14 @@ public class RepManager implements SensorEventListener {
                 prevVal = currVal;
             }
         }
-        appFiles.writeToFile("\n Number of reps: " + String.valueOf(numberOfReps), 2);
+        appFiles.writeToFile("\n Number of reps: " + String.valueOf(numberOfReps), 2, true);
         filteredData.clear();
     }
 
     private void clear_variables() {
         // reset values
         thresholdValues.clear();
-        deviceMotion.clear();
+//        deviceMotion.clear();
         //gravity values
         gravityAxis.clear();
         gravityAxis.add(new ArrayList<Float>());
@@ -184,20 +185,18 @@ public class RepManager implements SensorEventListener {
             float z = (Math.abs(sensorEvent.values[2]) < 1) ? 0 : sensorEvent.values[2];
 
             float cumulativeAmplitude = x + y + z;
-//            Log.v(TAG, String.format("%.2f", cumulativeAmplitude));
             thresholdValues.add(cumulativeAmplitude);
         }
 
-        if (mySensor.getType() == Sensor.TYPE_GYROSCOPE) {
-            float ignoreValue = 0.2f;
-            float x = (Math.abs(sensorEvent.values[0]) < ignoreValue) ? 0 : sensorEvent.values[0];
-            float y = (Math.abs(sensorEvent.values[1]) < ignoreValue) ? 0 : sensorEvent.values[1];
-            float z = (Math.abs(sensorEvent.values[2]) < ignoreValue) ? 0 : sensorEvent.values[2];
-
-            float cumulativeMotion = x + y + z;
-//            Log.v(TAG, String.format("Motion %.2f", cumulativeMotion));
-            deviceMotion.add(cumulativeMotion);
-        }
+//        if (mySensor.getType() == Sensor.TYPE_GYROSCOPE) {
+//            float ignoreValue = 0.2f;
+//            float x = (Math.abs(sensorEvent.values[0]) < ignoreValue) ? 0 : sensorEvent.values[0];
+//            float y = (Math.abs(sensorEvent.values[1]) < ignoreValue) ? 0 : sensorEvent.values[1];
+//            float z = (Math.abs(sensorEvent.values[2]) < ignoreValue) ? 0 : sensorEvent.values[2];
+//
+//            float cumulativeMotion = x + y + z;
+//            deviceMotion.add(cumulativeMotion);
+//        }
 
         if (mySensor.getType() == Sensor.TYPE_GRAVITY){
             float x = Math.abs(sensorEvent.values[0]);

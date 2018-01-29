@@ -62,10 +62,10 @@ public class FileManager {
         return appFiles.get(i).get(lastIndex);
     }
 
-    private void writeToFile(String data, File file) {
+    private void writeToFile(String data, File file, Boolean append) {
         FileWriter writer = null;
         try {
-            writer = new FileWriter(file, true);
+            writer = new FileWriter(file, append);
             writer.append(data);
             writer.flush();
             writer.close();
@@ -74,20 +74,20 @@ public class FileManager {
         }
     }
 
-    public void writeToFile(ArrayList<Float> array, int folderIndex) {
-        writeToFile(this.arrayToString(array), getFile(folderIndex, null));
+    public void writeToFile(ArrayList<Float> array, int folderIndex, Boolean append) {
+        writeToFile(this.arrayToString(array), getFile(folderIndex, null), append);
     }
 
     // write to certain directory with custom filename
-    public void writeToFile(ArrayList<Float> array, int folderIndex, String filename) {
-        writeToFile(this.arrayToString(array), getFile(folderIndex, filename));
+    public void writeToFile(ArrayList<Float> array, int folderIndex, String filename, Boolean append) {
+        writeToFile(this.arrayToString(array), getFile(folderIndex, filename), append);
     }
 
-    public void writeToFile(String data, int folderIndex) {
-        writeToFile(data, getFile(folderIndex, null));
+    public void writeToFile(String data, int folderIndex, Boolean append) {
+        writeToFile(data, getFile(folderIndex, null), append);
     }
 
-    public void writeToFile(String data, int folderIndex, String filename) {
-        writeToFile(data, getFile(folderIndex, filename));
+    public void writeToFile(String data, int folderIndex, String filename, Boolean append) {
+        writeToFile(data, getFile(folderIndex, filename), append);
     }
 }

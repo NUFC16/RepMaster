@@ -9,6 +9,8 @@ import android.os.CountDownTimer;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,18 +31,21 @@ public class MainActivity extends AppCompatActivity {
     String username, choosenExerise, realRepNumber;
 
     ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
-    CountDownTimer timer = new CountDownTimer(5000,1000) {
+    CountDownTimer timer = new CountDownTimer(5000,1200) {
         @Override
         public void onTick(long l) {
-            tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 100);
-
+            progressBar.setVisibility(View.VISIBLE);
+            tone.startTone(ToneGenerator.TONE_DTMF_3, 500);
         }
 
         @Override
         public void onFinish() {
-            tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 500);
+            progressBar.setVisibility(View.INVISIBLE);
+            showValue.setVisibility(View.VISIBLE);
+            tone.startTone(ToneGenerator.TONE_DTMF_P, 1000);
             mRepManager.register(username, choosenExerise, realRepNumber);
-
+            Button toggleButton = (Button) findViewById(R.id.toggle_btn);
+            toggleButton.setVisibility(View.VISIBLE);
         }
     };
 
@@ -59,9 +64,26 @@ public class MainActivity extends AppCompatActivity {
         showValue = (TextView) findViewById(R.id.rep_number);
         showExercise = (TextView) findViewById(R.id.show_exercise);
 
-        mRepManager = new RepManager(this);
+        mRepManager = new RepManager(this, showValue);
         progressBar = (ProgressBar)  findViewById(R.id.loadingCircle);
         final Button toggleButton = (Button) findViewById(R.id.toggle_btn);
+
+        showValue.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if (realRepNumber.equals(showValue.getText().toString())) {
+                    finishCounting();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+            }
+        });
 
         // inital state
         toggleButton.setOnClickListener(new View.OnClickListener() {
@@ -70,25 +92,26 @@ public class MainActivity extends AppCompatActivity {
 
                 if (toggleButton.getText().toString() == getString(R.string.start)) {
                     showValue.setVisibility(View.INVISIBLE);
-                    progressBar.setVisibility(View.VISIBLE);
+                    toggleButton.setVisibility(View.INVISIBLE);
                     timer.start();
                     toggleButton.setText(getString(R.string.end));
                 } else {
-                    mRepManager.unregister();
-                    showValue.setVisibility(View.VISIBLE);
-                    progressBar.setVisibility(View.INVISIBLE);
-
-                    toggleButton.setText(getString(R.string.start));
-                    showValue.setText(String.format("%d", mRepManager.getReps()));
-                  
-                    showExercise.setText(mRepManager.getExcersise());
-                    mRepManager.makeFilesVisibleOnPC(MainActivity.this);
-
+                    finishCounting();
                 }
             }
         });
     }
 
+    public void finishCounting() {
+        tone.startTone(ToneGenerator.TONE_CDMA_ABBR_REORDER, 3000);
+        mRepManager.unregister();
+        final Button toggleButton = (Button) findViewById(R.id.toggle_btn);
+        toggleButton.setText(getString(R.string.start));
+
+        showValue.setVisibility(View.VISIBLE);
+        showExercise.setText(mRepManager.getExcersise());
+        mRepManager.makeFilesVisibleOnPC(MainActivity.this);
+    }
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -129,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
                 // apply
                 builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        username = user.getText().toString();
+                        username = (user.getText().toString().equals("")) ? username : user.getText().toString();
                         choosenExerise = exercise.getSelectedItem().toString();
                         realRepNumber = rNumber.getText().toString();
                     }
