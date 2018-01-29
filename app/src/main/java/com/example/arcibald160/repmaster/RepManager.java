@@ -49,11 +49,13 @@ public class RepManager implements SensorEventListener {
         appFiles.makeFilesVisibleOnPC(c);
     }
 
-    public void register() {
+    public void register(String username, String exercise, String realNumberOfReps) {
         senSensorManager.registerListener(this, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this, senGyroscope , SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this,senGravity, SensorManager.SENSOR_DELAY_NORMAL);
-        appFiles = new FileManager(new String[]{"/rawAccelero", "/rawGyro", "/filtered_accelero", "/rawGravity", "/cutoffGravity"});
+
+        String [] folders = new String[]{"/rawAccelero", "/rawGyro", "/filtered_accelero", "/rawGravity", "/cutoffGravity"};
+        appFiles = new FileManager(folders, username, exercise, realNumberOfReps);
         numberOfReps = 0;
     }
 
@@ -70,15 +72,31 @@ public class RepManager implements SensorEventListener {
 
 
     public String getExcersise(){
+        String exercise = "Unknown exercise";
+        float [] axisPercentageVector = calculate_exercise();
+
+        if (axisPercentageVector[1] >= 0.57f) { // dominant y and x
+            exercise =  "Pull ups";
+        } else if (axisPercentageVector[1] + axisPercentageVector[2] >= 0.70f) { // y+z >= ~75
+            exercise = "Squats";
+        } else if (axisPercentageVector[0] + axisPercentageVector[2] >= 0.80f) { // dominant x(1) and z(2), x+z >= 85
+            exercise = "Push ups";
+        }
+        this.clear_variables();
+        return exercise ;
+
+    }
+
+    private float [] calculate_exercise() {
         //raw gravitiy
         appFiles.writeToFile(gravityAxis.get(0), 3, "RawgravityX");
         appFiles.writeToFile(gravityAxis.get(1), 3, "RawgravityY");
         appFiles.writeToFile(gravityAxis.get(2), 3, "RawgravityZ");
 
         float xAvg, yAvg,zAvg;
-        gravityAxis.set(0, dFilter.cutoffFilter(gravityAxis.get(0), deviceMotion));
-        gravityAxis.set(1, dFilter.cutoffFilter(gravityAxis.get(1), deviceMotion));
-        gravityAxis.set(2, dFilter.cutoffFilter(gravityAxis.get(2), deviceMotion));
+        gravityAxis.set(0, dFilter.cutoffFilter(gravityAxis.get(0), this.deviceMotion));
+        gravityAxis.set(1, dFilter.cutoffFilter(gravityAxis.get(1), this.deviceMotion));
+        gravityAxis.set(2, dFilter.cutoffFilter(gravityAxis.get(2), this.deviceMotion));
 
         //cutoff gravity
         //gravitiy
@@ -102,8 +120,6 @@ public class RepManager implements SensorEventListener {
         appFiles.writeToFile("\n Prosjek: " + yAvg, 4, "GravityY");
         appFiles.writeToFile("\n Prosjek: " + zAvg, 4, "GravityZ");
 
-        String exercise = "Unknown exercise";
-
         sumAll = xAvg + yAvg + zAvg;
         float [] axisPercentageVector = {xAvg / sumAll, yAvg / sumAll, zAvg / sumAll};
 
@@ -111,21 +127,7 @@ public class RepManager implements SensorEventListener {
         appFiles.writeToFile("\n Percentage: " + axisPercentageVector[1], 4, "GravityY");
         appFiles.writeToFile("\n Percentage: " + axisPercentageVector[2] + " sumall " + sumAll, 4, "GravityZ");
 
-        if (axisPercentageVector[1] >= 0.80f) { // dominant x
-            exercise =  "Pull ups";
-        } else if (axisPercentageVector[1] >= 0.40f && axisPercentageVector[2] >= 0.28f) { // dominant z(2) and y(1)
-            exercise = "Squats";
-        } else if (axisPercentageVector[0] >= 0.28f && axisPercentageVector[2] >= 0.40f) { // dominant x(2) and z(1)
-            exercise = "Push ups";
-        }
-
-        gravityAxis.clear();
-        gravityAxis.add(new ArrayList<Float>());
-        gravityAxis.add(new ArrayList<Float>());
-        gravityAxis.add(new ArrayList<Float>());
-
-        return exercise ;
-
+        return axisPercentageVector;
     }
 
     private void calculate() {
@@ -161,7 +163,16 @@ public class RepManager implements SensorEventListener {
         filteredData.clear();
     }
 
-
+    private void clear_variables() {
+        // reset values
+        thresholdValues.clear();
+        deviceMotion.clear();
+        //gravity values
+        gravityAxis.clear();
+        gravityAxis.add(new ArrayList<Float>());
+        gravityAxis.add(new ArrayList<Float>());
+        gravityAxis.add(new ArrayList<Float>());
+    }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
