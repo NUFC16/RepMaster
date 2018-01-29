@@ -24,7 +24,7 @@ import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
-    TextView showValue, showExercise;
+    TextView showCountedRepNumber, showExercise;
     RepManager mRepManager = null;
     ProgressBar progressBar;
 
@@ -34,16 +34,23 @@ public class MainActivity extends AppCompatActivity {
     CountDownTimer timer = new CountDownTimer(5000,1200) {
         @Override
         public void onTick(long l) {
+            // show loading bar
             progressBar.setVisibility(View.VISIBLE);
+            // start tone
             tone.startTone(ToneGenerator.TONE_DTMF_3, 500);
         }
 
         @Override
         public void onFinish() {
+            // hide loading bar
             progressBar.setVisibility(View.INVISIBLE);
-            showValue.setVisibility(View.VISIBLE);
+            // last beep of start tone
             tone.startTone(ToneGenerator.TONE_DTMF_P, 1000);
+            // show label for counting reps after sound is finished
+            showCountedRepNumber.setVisibility(View.VISIBLE);
+
             mRepManager.register(username, choosenExerise, realRepNumber);
+            // enable stop button for manual stop
             Button toggleButton = (Button) findViewById(R.id.toggle_btn);
             toggleButton.setVisibility(View.VISIBLE);
         }
@@ -54,28 +61,34 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         // set initial values
-        int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 0;
         username = getString(R.string.default_username);
         choosenExerise = getString(R.string.default_exercise);
         realRepNumber = getString(R.string.default_realRepNumber);
 
+        // permission for writing data
+        int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 0;
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
 
-        showValue = (TextView) findViewById(R.id.rep_number);
+        // current counted rep number label
+        showCountedRepNumber = (TextView) findViewById(R.id.rep_number);
+        // show exercise label
         showExercise = (TextView) findViewById(R.id.show_exercise);
-
-        mRepManager = new RepManager(this, showValue);
+        // loading circle
         progressBar = (ProgressBar)  findViewById(R.id.loadingCircle);
+        // start/stop button
         final Button toggleButton = (Button) findViewById(R.id.toggle_btn);
 
-        showValue.addTextChangedListener(new TextWatcher() {
+        mRepManager = new RepManager(this, showCountedRepNumber);
+
+        // if value is equal to desired value than stop
+        showCountedRepNumber.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
             }
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (realRepNumber.equals(showValue.getText().toString())) {
+                if (realRepNumber.equals(showCountedRepNumber.getText().toString())) {
                     finishCounting();
                 }
             }
@@ -85,33 +98,38 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // inital state
         toggleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 if (toggleButton.getText().toString() == getString(R.string.start)) {
-                    showValue.setVisibility(View.INVISIBLE);
+                    showCountedRepNumber.setVisibility(View.INVISIBLE);
                     toggleButton.setVisibility(View.INVISIBLE);
                     timer.start();
                     toggleButton.setText(getString(R.string.end));
                 } else {
+                    // manually stop
                     finishCounting();
                 }
             }
         });
     }
 
+
     public void finishCounting() {
+        // notification tone for end
         tone.startTone(ToneGenerator.TONE_CDMA_ABBR_REORDER, 3000);
         mRepManager.unregister();
+
+        // set button text to start
         final Button toggleButton = (Button) findViewById(R.id.toggle_btn);
         toggleButton.setText(getString(R.string.start));
 
-        showValue.setVisibility(View.VISIBLE);
+        // show calculated exercise
         showExercise.setText(mRepManager.getExcersise());
+        // make experiment data appear on PC
         mRepManager.makeFilesVisibleOnPC(MainActivity.this);
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -121,6 +139,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        /*
+        This function is used for setting expected values of the experiment such as:
+        1. participant username
+        2. type of exercise
+        3. desired number of reps
+         */
         switch(item.getItemId()) {
             case R.id.settings_button:
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -131,22 +155,27 @@ public class MainActivity extends AppCompatActivity {
                 View mView = inflater.inflate(R.layout.settings_main, null);
 
                 builder.setTitle(R.string.settings);
-                // settings (form) elements
+                // settings: username
                 final TextView user = (TextView) mView.findViewById(R.id.settings_username);
-                final TextView rNumber = (TextView) mView.findViewById(R.id.settings_realRepNumber);
+                // settings: type of exercise
                 final Spinner exercise = (Spinner) mView.findViewById(R.id.settings_exercise);
+                // settings: desired number of reps
+                final TextView rNumber = (TextView) mView.findViewById(R.id.settings_realRepNumber);
+
                 builder.setView(mView);
 
-                // set value if choosen
+                // get current username
                 if (username != getString(R.string.default_username)) {
                     user.setText(username);
                 }
+                // get current desired rep number
+                if (realRepNumber != getString(R.string.default_realRepNumber)) {
+                    rNumber.setText(realRepNumber);
+                }
+                // get current type of exercise
                 if (choosenExerise != getString(R.string.default_exercise)) {
                     int spinnerPosition = Arrays.asList(getResources().getStringArray(R.array.exercise_array)).indexOf(choosenExerise);
                     exercise.setSelection(spinnerPosition);
-                }
-                if (realRepNumber != getString(R.string.default_realRepNumber)) {
-                    rNumber.setText(realRepNumber);
                 }
 
                 // apply
