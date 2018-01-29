@@ -3,6 +3,9 @@ package com.example.arcibald160.repmaster;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
+import android.os.CountDownTimer;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -22,7 +25,24 @@ public class MainActivity extends AppCompatActivity {
     TextView showValue, showExercise;
     RepManager mRepManager = null;
     ProgressBar progressBar;
+
     String username, choosenExerise, realRepNumber;
+
+    ToneGenerator tone = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+    CountDownTimer timer = new CountDownTimer(5000,1000) {
+        @Override
+        public void onTick(long l) {
+            tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 100);
+
+        }
+
+        @Override
+        public void onFinish() {
+            tone.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 500);
+            mRepManager.register(username, choosenExerise, realRepNumber);
+
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,17 +67,20 @@ public class MainActivity extends AppCompatActivity {
         toggleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 if (toggleButton.getText().toString() == getString(R.string.start)) {
                     showValue.setVisibility(View.INVISIBLE);
                     progressBar.setVisibility(View.VISIBLE);
-                    mRepManager.register(username, choosenExerise, realRepNumber);
+                    timer.start();
                     toggleButton.setText(getString(R.string.end));
                 } else {
                     mRepManager.unregister();
                     showValue.setVisibility(View.VISIBLE);
                     progressBar.setVisibility(View.INVISIBLE);
+
                     toggleButton.setText(getString(R.string.start));
                     showValue.setText(String.format("%d", mRepManager.getReps()));
+                  
                     showExercise.setText(mRepManager.getExcersise());
                     mRepManager.makeFilesVisibleOnPC(MainActivity.this);
 
